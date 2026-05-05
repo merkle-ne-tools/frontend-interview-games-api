@@ -4,7 +4,7 @@ import { GraphQLContext, GameQueryArgs, PaginatedGamesResult } from '../../types
 const gameResolvers = {
   Query: {
     games: async (_: any, args: GameQueryArgs, { db }: GraphQLContext): Promise<PaginatedGamesResult> => {
-      const { page = 1, limit = 10, genreId, platform, search } = args;
+      const { page = 1, limit = 10, genreId, platform, search, fromDate, toDate } = args;
       const offset = (page - 1) * limit;
 
       const where: any = {};
@@ -16,6 +16,11 @@ const gameResolvers = {
       }
       if (search) {
         where.title = seqWhere(fn('LOWER', col('title')), Op.like, `%${search.toLowerCase()}%`);
+      }
+      if (fromDate && toDate) {
+        where.release_date = {
+          [Op.between]: [fromDate, toDate]
+        };
       }
 
       const result = await db.Game.findAndCountAll({

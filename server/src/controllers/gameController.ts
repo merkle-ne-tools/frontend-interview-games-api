@@ -9,6 +9,8 @@ interface GameQueryParams extends ParsedQs {
   genre?: string;
   platform?: string;
   search?: string;
+  fromDate?: string;
+  toDate?: string;
   sort?: string;
   order?: string;
   page?: string;
@@ -24,7 +26,7 @@ const gameController = {
   // Get all games
   async getAllGames(req: Request<{}, HATEOASCollection<GameAttributes>, {}, GameQueryParams>, res: Response<HATEOASCollection<GameAttributes> | { error: string }>): Promise<void> {
     try {
-      const { page = 1, limit = 10, genre, platform, search } = req.query;
+      const { page = 1, limit = 10, genre, platform, search, fromDate, toDate } = req.query;
       const offset = (Number(page) - 1) * Number(limit);
 
       const where: any = {};
@@ -36,6 +38,12 @@ const gameController = {
       }
       if (search) {
         where.title = seqWhere(fn('LOWER', col('title')), Op.like, `%${search.toLowerCase()}%`);
+      }
+
+      if (fromDate && toDate) {
+        where.release_date = {
+          [Op.between]: [fromDate, toDate]
+        };
       }
 
       const games = await Game.findAndCountAll({
