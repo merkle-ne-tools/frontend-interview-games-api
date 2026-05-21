@@ -12,6 +12,8 @@ import swaggerUi from 'swagger-ui-express';
 import db from './models';
 import routes from './routes';
 import mediaRoutes from './routes/mediaRoutes';
+import unstableModeRoutes from './routes/unstableModeRoutes';
+import { unstableMiddleware, isUnstableEnabled } from './middleware/unstableMode';
 import { typeDefs, resolvers } from './graphql';
 import { colorize, createBox } from './utils/colors';
 
@@ -60,11 +62,14 @@ app.get('/graphql-sandbox', (req: Request, res: Response) => {
   res.sendFile('graphql-sandbox.html', { root: 'public' });
 });
 
+// Unstable mode toggle endpoints (mounted BEFORE the unstable middleware so they're never dropped)
+app.use('/admin', unstableModeRoutes);
+
 // Media routes (deterministic pattern generator)
-app.use('/media', mediaRoutes);
+app.use('/media', unstableMiddleware, mediaRoutes);
 
 // API Routes
-app.use(`${process.env.API_PREFIX || '/api'}/${process.env.API_VERSION || 'v1'}`, routes);
+app.use(`${process.env.API_PREFIX || '/api'}/${process.env.API_VERSION || 'v1'}`, unstableMiddleware, routes);
 
 // Error handling middleware
 interface AppError extends Error {
@@ -115,6 +120,7 @@ async function startServer(): Promise<void> {
       graphqlPath,
       cors<cors.CorsRequest>(),
       express.json(),
+      unstableMiddleware,
       expressMiddleware(apolloServer, {
         context: async () => ({
           db
@@ -147,6 +153,16 @@ async function startServer(): Promise<void> {
 
     console.log(createBox(serverInfo, '🎮 GAME API'));
     console.log('');
+
+    if (isUnstableEnabled()) {
+      console.log(colorize.warning('⚠️  UNSTABLE MODE ENABLED — 5% of API requests will fail randomly.'));
+      console.log(colorize.warning('   Toggle: GET /admin/unstable-mode-on | /admin/unstable-mode-off | /admin/unstable-mode'));
+      console.log('');
+    } else {
+      console.log(colorize.info('💪 Think your frontend is bulletproof? Flip on hard mode and find out:'));
+      console.log(colorize.info(`   curl http://localhost:${PORT}/admin/unstable-mode-on`));
+      console.log('');
+    }
   } catch (error) {
     console.log('');
     console.log(colorize.error('❌ ================================== ❌'));

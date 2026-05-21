@@ -102,6 +102,34 @@ npm run test:rest     # REST tests only
 npm run test:graphql  # GraphQL tests only
 ```
 
+### Unstable Mode
+
+The API can be put into an "unstable" mode that randomly fails ~5% of REST, GraphQL and `/media` requests so you can exercise your frontend's error handling, retries, and loading states. Documentation (`/api-docs`, `/graphql-sandbox`), `/health`, and the toggle endpoints themselves are never affected.
+
+When a request is selected to fail, the failure is one of three randomly chosen modes:
+- **500 error** — body is `{ error: { message, status, simulated: true, source: 'unstable-mode' } }`, response carries an `X-Unstable-Mode: simulated-failure` header
+- **Hang/timeout** — request hangs for 5–10s, then resolves with a 504 marked the same way (`simulated: true` + `X-Unstable-Mode` header)
+- **Dropped connection** — TCP socket is destroyed before any bytes are sent; the client sees a raw network error (`ECONNRESET` / empty reply) with no marker. This one is indistinguishable from real network failures by design
+
+**Start the server with unstable mode already on:**
+
+```bash
+npm run dev:unstable      # development (ts-node + nodemon)
+npm run start:unstable    # production (built JS)
+```
+
+Or pass `UNSTABLE_MODE=true` to any boot command, including `docker-compose`.
+
+**Toggle at runtime:**
+
+| Endpoint | Effect |
+| --- | --- |
+| `GET /admin/unstable-mode-on` | Enable unstable mode |
+| `GET /admin/unstable-mode-off` | Disable unstable mode |
+| `GET /admin/unstable-mode` | Current status + guidance |
+
+State is in-memory and resets to the env-var default on restart.
+
 ### Media/Image Generator
 
 The API includes a deterministic pattern generator for placeholder images. Image URLs are provided in the API responses and can be used directly in your frontend application.
