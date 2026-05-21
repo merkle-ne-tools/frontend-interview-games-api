@@ -40,6 +40,10 @@ Place your application in the /client folder. Ensure the repository includes:
 
 Include the GitHub repository link in your submission.
 
+## Server Folder
+
+The `/server` folder is **not** meant to be touched. The API comes with challenges by design to test your problem-solving abilities. You are expected to work with the API as-is. Making changes to the `/server` folder is not allowed and will reflect negatively on your solution.
+
 ## Use of External Tools
 
 This assignment is intended to evaluate your individual coding skills, problem-solving approach, and architectural decisions. **Please do not use AI tools (such as GitHub Copilot, ChatGPT, or similar) to generate code or structure the solution**. Likewise, avoid copying large portions of code from existing repositories or online sources.
