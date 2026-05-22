@@ -104,14 +104,14 @@ npm run test:graphql  # GraphQL tests only
 
 ### Unstable Mode
 
-The API can be put into an "unstable" mode that randomly fails ~5% of REST, GraphQL and `/media` requests so you can exercise your frontend's error handling, retries, and loading states. Documentation (`/api-docs`, `/graphql-sandbox`), `/health`, and the toggle endpoints themselves are never affected.
+The API can be put into an "unstable" mode that randomly fails requests so you can exercise your frontend's error handling, retries, and loading states. Documentation (`/api-docs`, `/graphql-sandbox`), `/health`, and the toggle endpoints themselves are never affected.
 
 When a request is selected to fail, the failure is one of three randomly chosen modes:
 - **500 error** — body is `{ error: { message, status, simulated: true, source: 'unstable-mode' } }`, response carries an `X-Unstable-Mode: simulated-failure` header
 - **Hang/timeout** — request hangs for 5–10s, then resolves with a 504 marked the same way (`simulated: true` + `X-Unstable-Mode` header)
 - **Dropped connection** — TCP socket is destroyed before any bytes are sent; the client sees a raw network error (`ECONNRESET` / empty reply) with no marker. This one is indistinguishable from real network failures by design
 
-**Start the server with unstable mode already on:**
+**Start the server with unstable mode already on (5% default failure rate, all modes, all endpoints):**
 
 ```bash
 npm run dev:unstable      # development (ts-node + nodemon)
@@ -124,9 +124,38 @@ Or pass `UNSTABLE_MODE=true` to any boot command, including `docker-compose`.
 
 | Endpoint | Effect |
 | --- | --- |
-| `GET /admin/unstable-mode-on` | Enable unstable mode |
-| `GET /admin/unstable-mode-off` | Disable unstable mode |
-| `GET /admin/unstable-mode` | Current status + guidance |
+| `GET /admin/unstable-mode-on` | Enable unstable mode (with optional query params, see below) |
+| `GET /admin/unstable-mode-off` | Disable unstable mode and **reset config to defaults** |
+| `GET /admin/unstable-mode` | Current status + active config + usage examples |
+
+**Configure via query params on `/admin/unstable-mode-on`:**
+
+| Param | Type | Default | Valid values |
+| --- | --- | --- | --- |
+| `errorRate` | float | `0.05` | `0` – `0.9` |
+| `failureModes` | comma list | all three | any non-empty subset of `error500`, `hang`, `dropConnection` |
+| `endpoints` | string | `all` | `all`, `images-only` (only `/media` fails), `apis-only` (only `/api/v1` and `/graphql` fail) |
+
+Any invalid param returns `400` and does **not** change state.
+
+**Examples:**
+
+```bash
+# Default config (5% errors, all modes, all endpoints)
+curl http://localhost:8000/admin/unstable-mode-on
+
+# 30% error rate, only 500s and hangs, all endpoints
+curl 'http://localhost:8000/admin/unstable-mode-on?errorRate=0.3&failureModes=error500,hang'
+
+# Break only the image endpoint
+curl 'http://localhost:8000/admin/unstable-mode-on?endpoints=images-only'
+
+# Hammer the data APIs hard
+curl 'http://localhost:8000/admin/unstable-mode-on?errorRate=0.5&endpoints=apis-only'
+
+# Disable everything and reset config
+curl http://localhost:8000/admin/unstable-mode-off
+```
 
 State is in-memory and resets to the env-var default on restart.
 

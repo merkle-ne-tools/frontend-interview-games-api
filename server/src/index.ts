@@ -13,7 +13,7 @@ import db from './models';
 import routes from './routes';
 import mediaRoutes from './routes/mediaRoutes';
 import unstableModeRoutes from './routes/unstableModeRoutes';
-import { unstableMiddleware, isUnstableEnabled } from './middleware/unstableMode';
+import { createUnstableMiddleware, getConfig } from './middleware/unstableMode';
 import { typeDefs, resolvers } from './graphql';
 import { colorize, createBox } from './utils/colors';
 
@@ -66,10 +66,10 @@ app.get('/graphql-sandbox', (req: Request, res: Response) => {
 app.use('/admin', unstableModeRoutes);
 
 // Media routes (deterministic pattern generator)
-app.use('/media', unstableMiddleware, mediaRoutes);
+app.use('/media', createUnstableMiddleware('media'), mediaRoutes);
 
 // API Routes
-app.use(`${process.env.API_PREFIX || '/api'}/${process.env.API_VERSION || 'v1'}`, unstableMiddleware, routes);
+app.use(`${process.env.API_PREFIX || '/api'}/${process.env.API_VERSION || 'v1'}`, createUnstableMiddleware('api'), routes);
 
 // Error handling middleware
 interface AppError extends Error {
@@ -120,7 +120,7 @@ async function startServer(): Promise<void> {
       graphqlPath,
       cors<cors.CorsRequest>(),
       express.json(),
-      unstableMiddleware,
+      createUnstableMiddleware('api'),
       expressMiddleware(apolloServer, {
         context: async () => ({
           db
@@ -154,15 +154,24 @@ async function startServer(): Promise<void> {
     console.log(createBox(serverInfo, '🎮 GAME API'));
     console.log('');
 
-    if (isUnstableEnabled()) {
-      console.log(colorize.warning('⚠️  UNSTABLE MODE ENABLED — 5% of API requests will fail randomly.'));
-      console.log(colorize.warning('   Toggle: GET /admin/unstable-mode-on | /admin/unstable-mode-off | /admin/unstable-mode'));
-      console.log('');
+    const unstableConfig = getConfig();
+    const portStr = PORT.toString();
+    console.log(colorize.bold('🧪 UNSTABLE MODE (frontend resilience testing):'));
+    if (unstableConfig.enabled) {
+      console.log(
+        colorize.warning(
+          `   Currently ON — errorRate=${unstableConfig.errorRate}, failureModes=[${unstableConfig.failureModes.join(', ')}], endpoints=${unstableConfig.endpoints}`
+        )
+      );
     } else {
-      console.log(colorize.info('💪 Think your frontend is bulletproof? Flip on hard mode and find out:'));
-      console.log(colorize.info(`   curl http://localhost:${PORT}/admin/unstable-mode-on`));
-      console.log('');
+      console.log(colorize.dim('   Currently OFF — flip on hard mode and find out if your frontend is bulletproof:'));
     }
+    console.log(`   ${colorize.info('on:    ')}${colorize.url(`curl http://localhost:${portStr}/admin/unstable-mode-on`)}`);
+    console.log(`   ${colorize.info('tune:  ')}${colorize.url(`curl 'http://localhost:${portStr}/admin/unstable-mode-on?errorRate=0.3&failureModes=error500,hang'`)}`);
+    console.log(`   ${colorize.info('scope: ')}${colorize.url(`curl 'http://localhost:${portStr}/admin/unstable-mode-on?endpoints=images-only'`)}`);
+    console.log(`   ${colorize.info('off:   ')}${colorize.url(`curl http://localhost:${portStr}/admin/unstable-mode-off`)}`);
+    console.log(`   ${colorize.info('status:')}${colorize.url(`curl http://localhost:${portStr}/admin/unstable-mode`)}`);
+    console.log('');
   } catch (error) {
     console.log('');
     console.log(colorize.error('❌ ================================== ❌'));
