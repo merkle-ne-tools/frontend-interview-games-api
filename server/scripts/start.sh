@@ -6,6 +6,9 @@ FIRST_LAUNCH=false
 # Get port from environment or use default
 PORT="${PORT:-8000}"
 
+# Detect unstable mode (simulated API failures)
+UNSTABLE="${UNSTABLE_MODE:-false}"
+
 echo ""
 echo "═══════════════════════════════════════════════════════════════════"
 echo "              MERKLE GAMES API - INITIALIZING"
@@ -105,6 +108,22 @@ TEST_EXIT=$?
         echo "     - Data is seeded during first launch"
         echo "     - Images are generated deterministically and support w and h params"
         echo ""
+        echo "  Unstable Mode (frontend resilience testing):"
+        if [ "$UNSTABLE" = "true" ]; then
+            echo "     - Currently ON — REST, GraphQL and media endpoints randomly fail"
+            echo "     - Failures: 500 errors, hangs (5-10s, then 504), dropped connections"
+            echo "     - Simulated errors carry an 'X-Unstable-Mode' header (except drops)"
+            echo "     - Tune:   http://localhost:${PORT}/admin/unstable-mode-on?errorRate=0.3"
+            echo "     - Off:    http://localhost:${PORT}/admin/unstable-mode-off"
+        else
+            echo "     - Currently OFF — endpoints can be made to randomly fail"
+            echo "       (500 errors, hangs, dropped connections) to test your frontend"
+            echo "     - On:   http://localhost:${PORT}/admin/unstable-mode-on"
+            echo "     - Tune: http://localhost:${PORT}/admin/unstable-mode-on?errorRate=0.3"
+        fi
+        echo "     - Status: http://localhost:${PORT}/admin/unstable-mode"
+        echo "     - Read more in server/README.md"
+        echo ""
         echo "  Test Results:"
         echo "     • REST API Tests:     ${REST_COUNT:-30} passed"
         echo "     • GraphQL Tests:      ${GRAPHQL_COUNT:-22} passed"
@@ -128,6 +147,22 @@ TEST_EXIT=$?
         echo "   • GraphQL Playground: http://localhost:${PORT}/graphql-sandbox"
         echo "   • Image Generator:    http://localhost:${PORT}/media/example?w=400&h=300"
         echo "   • Health Check:       http://localhost:${PORT}/health"
+        echo ""
+        echo "Unstable Mode (frontend resilience testing):"
+        if [ "$UNSTABLE" = "true" ]; then
+            echo "   - Currently ON — REST, GraphQL and media endpoints randomly fail"
+            echo "   - Failures: 500 errors, hangs (5-10s, then 504), dropped connections"
+            echo "   - Simulated errors carry an 'X-Unstable-Mode' header (except drops)"
+            echo "   - Tune:   http://localhost:${PORT}/admin/unstable-mode-on?errorRate=0.3"
+            echo "   - Off:    http://localhost:${PORT}/admin/unstable-mode-off"
+        else
+            echo "   - Currently OFF — endpoints can be made to randomly fail"
+            echo "     (500 errors, hangs, dropped connections) to test your frontend"
+            echo "   - On:   http://localhost:${PORT}/admin/unstable-mode-on"
+            echo "   - Tune: http://localhost:${PORT}/admin/unstable-mode-on?errorRate=0.3"
+        fi
+        echo "   - Status: http://localhost:${PORT}/admin/unstable-mode"
+        echo "   - Read more in server/README.md"
         echo ""
         echo "Test Results:"
         echo "   • REST API Tests:     ${REST_COUNT:-30} passed"
