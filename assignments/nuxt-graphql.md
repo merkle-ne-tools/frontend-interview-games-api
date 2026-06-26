@@ -40,9 +40,14 @@ Place your application in the /client folder. Ensure the repository includes:
 
 Include the GitHub repository link in your submission.
 
-## Server Folder
+## Scope of Your Assignment
 
-The `/server` folder is **not** meant to be touched. The API comes with challenges by design to test your problem-solving abilities. You are expected to work with the API as-is. Making changes to the `/server` folder is not allowed and will reflect negatively on your solution.
+Your work belongs in the `/client` folder. Please stay within that scope.
+
+- **Do not modify the `/server` folder.** The API comes with challenges by design to test your problem-solving abilities. You are expected to work with the API as-is. Making changes to the `/server` folder is not allowed and will reflect negatively on your solution.
+- **Use the GraphQL API only.** This assignment is specifically about consuming the GraphQL endpoint. Do not switch to REST, and do not implement both. Working around the assigned API style instead of within it is outside the scope of the task and will reflect negatively on your solution.
+
+If something about the API seems broken or awkward, treat it as part of the challenge and handle it on the client side rather than changing the server or swapping API styles. Note any such decisions in your README so we can discuss them.
 
 ## Use of External Tools
 
