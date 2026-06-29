@@ -129,6 +129,8 @@ export interface GameQueryArgs {
   genreId?: string;
   platform?: string;
   search?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 
 export interface CompanyQueryArgs {
