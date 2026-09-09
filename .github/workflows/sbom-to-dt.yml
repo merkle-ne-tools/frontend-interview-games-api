@@ -1,0 +1,22 @@
+name: SBOM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/package-lock.json'
+      - '**/package.json'
+      - '**/pnpm-lock.yaml'
+      - '**/yarn.lock'
+      - '.github/workflows/sbom-to-dt.yml'
+  schedule:
+    - cron: '20 5 * * 1'
+  workflow_dispatch:
+
+jobs:
+  sbom:
+    permissions:
+      contents: read
+    uses: merkle-ne-platform/.github/.github/workflows/sbom.yml@5a3951cbf48aaa5dbbf7b29db96c99ca4fdc6def
+    secrets:
+      DEPENDENCY_TRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
